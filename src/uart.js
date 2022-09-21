@@ -93,7 +93,11 @@ function UART(cpu, port, bus)
             this.irq = 4;
     }
 
-    this.bus.register("serial" + this.com + "-input", function(data)
+    const input_bus_channel = "serial" + this.com + "-input";
+    this.output_char_bus_channel = "serial" + this.com + "-output-char"
+    this.output_line_bus_channel = "serial" + this.com + "-output-line"
+
+    this.bus.register(input_bus_channel, function(data)
     {
         this.data_received(data);
     }, this);
@@ -348,15 +352,15 @@ UART.prototype.write_data = function(out_byte)
 
     var char = String.fromCharCode(out_byte);
 
-    this.bus.send("serial" + this.com + "-output-char", char);
+    this.bus.send(this.output_char_bus_channel, char);
 
     this.current_line.push(out_byte);
 
     if(char === "\n")
     {
-        const line = String.fromCharCode.apply("", this.current_line).trimRight().replace(/[\x00-\x08\x0b-\x1f\x7f\x80-\xff]/g, "");
-        dbg_log("SERIAL: " + line);
-        this.bus.send("serial" + this.com + "-output-line", String.fromCharCode.apply("", this.current_line));
-        this.current_line = [];
+        const line = String.fromCharCode.apply("", this.current_line);
+        dbg_log("SERIAL: " + line.trimRight().replace(/[\x00-\x08\x0b-\x1f\x7f\x80-\xff]/g, ""));
+        this.bus.send(this.output_line_bus_channel, line);
+        this.current_line.length = 0;
     }
 };
