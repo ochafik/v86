@@ -3,12 +3,19 @@ FROM i386/debian:buster
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt update && \
+    # https://openscad.org/downloads.html 
+    apt --yes install apt-transport-https wget gnupg && \
+    wget -qO- https://files.openscad.org/OBS-Repository-Key.pub | apt-key add - && \
+    echo "deb https://download.opensuse.org/repositories/home:/t-paul/Debian_10/ ./" > /etc/apt/sources.list.d/openscad.list && \
+    apt update && \
     apt --yes --no-install-recommends install \
         linux-image-686 grub2 systemd \
         libterm-readline-perl-perl \
         gcc make libc6-dev \
         unzip bzip2 xz-utils \
         fluxbox \
+        openscad \
+        openscad-nightly \
         xserver-xorg-input-kbd xserver-xorg-input-mouse xserver-xorg-input-evdev \
         xserver-xorg-video-fbdev xserver-xorg-video-vesa \
         xserver-xorg x11-xserver-utils xinit dbus-x11 \
