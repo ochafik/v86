@@ -8,13 +8,37 @@
 window.onload = function()
 {
     var emulator = new V86Starter({
+        autostart: true,
         wasm_path: "../build/v86.wasm",
         memory_size: 512 * 1024 * 1024,
         vga_memory_size: 8 * 1024 * 1024,
         screen_container: document.getElementById("screen_container"),
-        initial_state: { url: "../images/debian-state-base.bin" },
-        filesystem: { baseurl: "../images/debian-9p-rootfs-flat/" },
-        autostart: true,
+        network_relay_url: "wss://relay.widgetry.org/",
+        uart1: true, // Additional serial port to communicate data
+        // uart2: true,
+        // uart3: true,
+        
+        // filesystem: { baseurl: "../images/debian-9p-rootfs-flat/" },
+        // // initial_state: { url: "../images/debian-state-base.bin" },
+        // initial_state: { url: "../images/debian-state-base.bin.zst" },
+
+        bzimage_initrd_from_filesystem: true,
+        cmdline: "rw init=/bin/systemd root=host9p console=ttyS0 spectre_v2=off pti=off",
+        filesystem: {
+            basefs: {
+                url: "../images/debian-base-fs.json",
+            },
+            baseurl: "../images/debian-9p-rootfs-flat/",
+        },
+        bios: {
+            url: "../bios/seabios.bin",
+        },
+        vga_bios: {
+            url: "../bios/vgabios.bin",
+        },
+        // cdrom: {
+        //     url: "../images/linux.iso",
+        // },
     });
 };
 </script>
