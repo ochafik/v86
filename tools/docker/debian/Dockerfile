@@ -51,6 +51,14 @@ RUN apt update && \
     cd bench && \
     make
 
+# Install code-server (https://felipecruz.es/set-up-remote-dev-env-rpi/)
+RUN apt install -y npm && \
+    npm i -g n yarn && \
+    n latest && \
+    yarn global add code-server
+# n 14
+RUN sysctl vm.swappiness=1
+
 COPY getty-noclear.conf getty-override.conf /etc/systemd/system/getty@tty1.service.d/
 COPY getty-autologin-serial.conf /etc/systemd/system/serial-getty@ttyS0.service.d/
 
