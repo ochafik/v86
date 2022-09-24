@@ -1,9 +1,0 @@
-FROM alpine:3.14
-
-RUN apk add --update curl clang make openjdk8 npm python3
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && PATH="${HOME}/.cargo/bin:${PATH}" rustup target add wasm32-unknown-unknown
-
-ENV PATH "/root/.cargo/bin:${PATH}"
-
-WORKDIR /v86
