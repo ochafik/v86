@@ -12,6 +12,16 @@ JIT_DEPENDENCIES=$(GEN_DEPENDENCIES) gen/generate_jit.js
 INTERPRETER_DEPENDENCIES=$(GEN_DEPENDENCIES) gen/generate_interpreter.js
 ANALYZER_DEPENDENCIES=$(GEN_DEPENDENCIES) gen/generate_analyzer.js
 
+REMOTE_COPY_SH_IMAGES = \
+	images/linux.iso \
+	images/linux4.iso \
+	images/buildroot-bzimage.bin \
+	images/openbsd-floppy.img \
+	images/kolibri.img \
+	images/windows101.img \
+	images/os8.img \
+	images/freedos722.img
+
 STRIP_DEBUG_FLAG=
 ifeq ($(STRIP_DEBUG),true)
 STRIP_DEBUG_FLAG=--v86-strip-debug
@@ -20,7 +30,7 @@ endif
 WASM_OPT ?= false
 
 default: build/v86-debug.wasm
-all: build/v86_all.js build/libv86.js build/v86.wasm
+all: build/v86_all.js build/libv86.js build/v86.wasm build/xterm.js
 all-debug: build/libv86-debug.js build/v86-debug.wasm
 browser: build/v86_all.js
 
@@ -343,3 +353,39 @@ build/xterm.js:
 	curl https://cdn.jsdelivr.net/npm/xterm@4.9.0/lib/xterm.js > build/xterm.js
 	curl https://cdn.jsdelivr.net/npm/xterm@4.9.0/lib/xterm.js.map > build/xterm.js.map
 	curl https://cdn.jsdelivr.net/npm/xterm@4.9.0/css/xterm.css > build/xterm.css
+
+images/debian-base-fs.json: \
+		tools/docker/debian/Dockerfile \
+		tools/docker/export-fs.sh \
+		tools/*.py
+	cd tools/docker/debian && \
+		docker build . --platform linux/386 --rm \
+			--tag i386/debian-full
+	tools/docker/export-fs.sh \
+		i386/debian-full \
+		debian-9p-rootfs.tar \
+		debian-9p-rootfs-flat \
+		debian-base-fs.json
+
+images/debian-state-base.bin: \
+		build/libv86.js \
+		images/debian-base-fs.json \
+		tools/docker/debian/build-state.js 
+	cd tools/docker/debian && \
+		./build-state.js
+
+%.zst: %
+	zstd -f $<
+
+$(REMOTE_COPY_SH_IMAGES): %:
+	wget -P images/ https://k.copy.sh/$(notdir $@)
+
+images/dsl-4.11.rc2.iso:
+	wget -P images/ http://distro.ibiblio.org/damnsmall/release_candidate/dsl-4.11.rc2.iso
+
+.PHONY: images site default all all-debug browser debian-image
+images: $(REMOTE_COPY_SH_IMAGES) \
+				images/dsl-4.11.rc2.iso \
+				images/debian-state-base.bin.zst
+
+site: images all
