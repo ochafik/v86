@@ -30,7 +30,8 @@ CLOSURE_READABLE=--formatting PRETTY_PRINT --debug
 
 CLOSURE_SOURCE_MAP=\
 		--source_map_format V3\
-		--create_source_map '%outname%.map'
+		--create_source_map '%outname%.map'\
+		--output_wrapper "%output%//# sourceMappingURL=%outname%.map"
 
 CLOSURE_FLAGS=\
 		--generate_exports\
@@ -97,7 +98,7 @@ CORE_FILES:=$(addprefix src/,$(CORE_FILES))
 LIB_FILES:=$(addprefix lib/,$(LIB_FILES))
 BROWSER_FILES:=$(addprefix src/browser/,$(BROWSER_FILES))
 
-build/v86_all.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js
+build/v86_all.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js Makefile
 	mkdir -p build
 	-ls -lh build/v86_all.js
 	java -jar $(CLOSURE) \
@@ -112,7 +113,8 @@ build/v86_all.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js
 		--js src/browser/main.js
 	ls -lh build/v86_all.js
 
-build/v86_all_debug.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js
+
+build/v86_all_debug.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js Makefile
 	mkdir -p build
 	java -jar $(CLOSURE) \
 		--js_output_file build/v86_all_debug.js\
@@ -125,7 +127,7 @@ build/v86_all_debug.js: $(CLOSURE) src/*.js src/browser/*.js lib/*.js
 		--js $(BROWSER_FILES)\
 		--js src/browser/main.js
 
-build/libv86.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js
+build/libv86.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js Makefile
 	mkdir -p build
 	-ls -lh build/libv86.js
 	java -jar $(CLOSURE) \
@@ -140,7 +142,7 @@ build/libv86.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js
 		--js $(LIB_FILES)
 	ls -lh build/libv86.js
 
-build/libv86-debug.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js
+build/libv86-debug.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js Makefile
 	mkdir -p build
 	java -jar $(CLOSURE) \
 		--js_output_file build/libv86-debug.js\
@@ -149,7 +151,11 @@ build/libv86-debug.js: $(CLOSURE) src/*.js lib/*.js src/browser/*.js
 		$(CLOSURE_READABLE)\
 		--compilation_level SIMPLE\
 		--jscomp_off=missingProperties\
-		--output_wrapper ';(function(){%output%}).call(this);'\
+		--source_map_format V3\
+		--source_map_location_mapping 'lib|/lib'\
+		--source_map_location_mapping 'src|/src'\
+		--create_source_map 'build/libv86-debug.js.map'\
+		--output_wrapper ';(function(){%output%}).call(this); //# sourceMappingURL=libv86-debug.js.map'\
 		--js $(CORE_FILES)\
 		--js $(BROWSER_FILES)\
 		--js $(LIB_FILES)
