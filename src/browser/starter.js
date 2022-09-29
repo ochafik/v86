@@ -491,7 +491,7 @@ V86Starter.prototype.continue_init = async function(emulator, options)
         {
             file_storage = new ServerFileStorageWrapper(file_storage, base_url);
         }
-        settings.fs9p = this.fs9p = new FS(file_storage);
+        settings.fs9p = this.fs9p = new DigestFS(file_storage);
 
         if(fs_url)
         {
@@ -1119,32 +1119,8 @@ V86Starter.prototype.mount_fs = async function(path, baseurl, basefs, callback)
     {
         file_storage = new ServerFileStorageWrapper(file_storage, baseurl);
     }
-    const newfs = new FS(file_storage, this.fs9p.qidcounter);
-    const mount = () =>
-    {
-        const idx = this.fs9p.Mount(path, newfs);
-        if(!callback)
-        {
-            return;
-        }
-        if(idx === -ENOENT)
-        {
-            callback(new FileNotFoundError());
-        }
-        else if(idx === -EEXIST)
-        {
-            callback(new FileExistsError());
-        }
-        else if(idx < 0)
-        {
-            dbg_assert(false, "Unexpected error code: " + (-idx));
-            callback(new Error("Failed to mount. Error number: " + (-idx)));
-        }
-        else
-        {
-            callback(null);
-        }
-    };
+    const newfs = new DigestFS(file_storage, this.fs9p.qidcounter);
+    const mount = () => this.mount_fs_internal(path, newfs, callback);
     if(baseurl)
     {
         dbg_assert(typeof basefs === "object", "Filesystem: basefs must be a JSON object");
@@ -1153,6 +1129,53 @@ V86Starter.prototype.mount_fs = async function(path, baseurl, basefs, callback)
     else
     {
         mount();
+    }
+};
+
+
+/**
+ * Mount another filesystem to the current filesystem.
+ * @param {string} path Path for the mount point
+ * @param {!fs} newfs The Node.js-like fs object (e.g. BrowserFS's FS)
+ * @param {function(Object)=} callback
+ * @export
+ */
+V86Starter.prototype.mount_node_fs = async function(path, newfs, callback)
+{
+  return this.mount_fs_internal(path, new NodeFS(newfs, this.fs9p.qidcounter), callback);
+}
+
+
+/**
+ * Mount another filesystem to the current filesystem.
+ * @private
+ * @param {string} path Path for the mount point
+ * @param {!FS} newfs the internal fs to mount
+ * @param {function(Object)=} callback
+ */
+V86Starter.prototype.mount_fs_internal = async function(path, newfs, callback)
+{
+    const idx = this.fs9p.Mount(path, newfs);
+    if(!callback)
+    {
+        return;
+    }
+    if(idx === -ENOENT)
+    {
+        callback(new FileNotFoundError());
+    }
+    else if(idx === -EEXIST)
+    {
+        callback(new FileExistsError());
+    }
+    else if(idx < 0)
+    {
+        dbg_assert(false, "Unexpected error code: " + (-idx));
+        callback(new Error("Failed to mount. Error number: " + (-idx)));
+    }
+    else
+    {
+        callback(null);
     }
 };
 
